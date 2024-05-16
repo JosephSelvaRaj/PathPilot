@@ -1,4 +1,4 @@
-#include <RPLidar.h>
+include <RPLidar.h>
 #include <SD.h>
 #include <SPI.h>
 
@@ -13,7 +13,7 @@
 #define SD_CS 53
 
 // Macros
-#define MOTOR_STRAIGHT_SPEED 90
+#define MOTOR_STRAIGHT_SPEED 100
 #define LIDAR_RESOLUTION 240
 #define LIDAR_SPEED 255
 #define DISTANCE_MAX_THRESHOLD 4000 // in mm
@@ -28,18 +28,16 @@
 #define ROBOT_PIVOTLEFT 'l'
 #define ROBOT_BACKWARDLEFT 'm'
 #define ROBOT_BACKWARDRIGHT 'n'
-#define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.95 // At 70 straight speed with 0.93 left motor tune down, the robot moves straight. Not effective at 150 straight speed.
-#define MOTOR_TURNING_RATIO 0.4
+#define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.94
+#define MOTOR_TURNING_RATIO 0.7
 
 // Global Variables
 char ControlCmd;
-bool storeCtrlCmdFlag = false;
 bool dataRecordingFlag = false;
 int distanceBuffer[LIDAR_RESOLUTION];
 int distanceValue = 0;
 int angleValue = 0;
 int qualityValue = 0;
-int counter = 0;
 
 // Library Objects
 RPLidar lidar;
@@ -55,12 +53,11 @@ void setup()
   pinMode(MOTORB_IN3, OUTPUT);
   pinMode(MOTORB_IN4, OUTPUT);
   pinMode(RPLIDAR_MCONTRL, OUTPUT);
-  Serial.begin(9600);    // Serial Monitor Display
   Serial1.begin(9600);   // Bluetooth Module
   Serial2.begin(115200); // RPLidar
 
   // SD card initialization
-  if (!SD.begin(SD_CS))
+  while (!SD.begin(SD_CS))
   {
     // Handler for SD card initialization failure
   }
@@ -91,18 +88,8 @@ void loop()
   if (Serial1.available())
   {
     ControlCmd = Serial1.read();
-    Serial.println("Control Command Received: ");
-    Serial.println(ControlCmd);
 
-    if (ControlCmd == 'F' || ControlCmd == 'R' || ControlCmd == 'L')
-    {
-      storeCtrlCmdFlag = true;
-    }
-    else
-    {
-      storeCtrlCmdFlag = false;
-      dataRecordingFlag = (ControlCmd == DATA_RECORDING_ENABLED) ? true : ((ControlCmd == DATA_RECORDING_DISABLED) ? false : dataRecordingFlag);
-    }
+    dataRecordingFlag = (ControlCmd == DATA_RECORDING_ENABLED) ? true : ((ControlCmd == DATA_RECORDING_DISABLED) ? false : dataRecordingFlag);
   }
 
   moveMotors(ControlCmd);
@@ -111,7 +98,7 @@ void loop()
 ISR(TIMER1_COMPA_vect)
 {
   // distance buff convertion to string
-  if (dataRecordingFlag && storeCtrlCmdFlag)
+  if (dataRecordingFlag)
   {
     String dataString = "";
     for (int i = 0; i < LIDAR_RESOLUTION; i++)
@@ -132,7 +119,6 @@ ISR(TIMER1_COMPA_vect)
     else
     {
       // Error opening the data file
-      Serial.println("Error opening datalog.txt");
     }
   }
 }
