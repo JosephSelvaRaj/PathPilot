@@ -12,23 +12,23 @@
 #define MOTORB_IN4 36
 
 // Macros
-#define MOTOR_STRAIGHT_SPEED 80
+#define MOTOR_STRAIGHT_SPEED 75
 #define LIDAR_RESOLUTION 240
 #define LIDAR_SPEED 255
-#define DISTANCE_MAX_THRESHOLD 4000          // in mm
-#define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.93 // At 70 straight speed with 0.93 left motor tune down, the robot moves straight. Not effective at 150 straight speed.
+#define DISTANCE_MAX_THRESHOLD 2000          // in mm
+#define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.98 // At 70 straight speed with 0.93 left motor tune down, the robot moves straight. Not effective at 150 straight speed.
 #define MOTOR_TURNING_RATIO 0.6
 
 // Library Objects
 RPLidar lidar;
 
 Eloquent::ML::Port::RandomForest clf;
-int lidarDataSelection[80] = {88, 90, 130, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142,
-                              143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156,
-                              157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170,
-                              171, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202,
-                              203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216,
-                              217, 218, 219, 220, 221, 222, 223, 224, 225, 226};
+int lidarDataSelection[80] = {136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149,
+                              150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163,
+                              164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 176, 184, 185,
+                              186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199,
+                              200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213,
+                              214, 215, 216, 217, 218, 219, 220, 221, 222, 223};
 float selectedData[80];
 int distanceBuffer[LIDAR_RESOLUTION];
 int controlCmd;
@@ -137,6 +137,7 @@ void moveMotors(int cmd)
   switch (cmd)
   {
   case 0:
+    // Forward
     digitalWrite(MOTORA_IN1, HIGH);
     digitalWrite(MOTORA_IN2, LOW);
     digitalWrite(MOTORB_IN3, HIGH);
@@ -145,22 +146,24 @@ void moveMotors(int cmd)
     analogWrite(ENB, MOTOR_STRAIGHT_SPEED * LEFT_MOTOR_TUNE_DOWN_PERCENTAGE);
     break;
 
-  case 2:
-    digitalWrite(MOTORA_IN1, HIGH);
-    digitalWrite(MOTORA_IN2, LOW);
-    digitalWrite(MOTORB_IN3, HIGH);
-    digitalWrite(MOTORB_IN4, LOW);
-    analogWrite(ENA, MOTOR_STRAIGHT_SPEED * MOTOR_TURNING_RATIO);
-    analogWrite(ENB, MOTOR_STRAIGHT_SPEED * LEFT_MOTOR_TUNE_DOWN_PERCENTAGE);
-    break;
-
   case 1:
+    // Left
     digitalWrite(MOTORA_IN1, HIGH);
     digitalWrite(MOTORA_IN2, LOW);
     digitalWrite(MOTORB_IN3, HIGH);
     digitalWrite(MOTORB_IN4, LOW);
     analogWrite(ENA, MOTOR_STRAIGHT_SPEED);
     analogWrite(ENB, MOTOR_STRAIGHT_SPEED * MOTOR_TURNING_RATIO * LEFT_MOTOR_TUNE_DOWN_PERCENTAGE);
+    break;
+
+  case 2:
+    // Right
+    digitalWrite(MOTORA_IN1, HIGH);
+    digitalWrite(MOTORA_IN2, LOW);
+    digitalWrite(MOTORB_IN3, HIGH);
+    digitalWrite(MOTORB_IN4, LOW);
+    analogWrite(ENA, MOTOR_STRAIGHT_SPEED * MOTOR_TURNING_RATIO);
+    analogWrite(ENB, MOTOR_STRAIGHT_SPEED * LEFT_MOTOR_TUNE_DOWN_PERCENTAGE);
     break;
 
   default:

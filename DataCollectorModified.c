@@ -13,7 +13,7 @@
 #define SD_CS 53
 
 // Macros
-#define MOTOR_STRAIGHT_SPEED 100
+#define MOTOR_STRAIGHT_SPEED 105
 #define LIDAR_RESOLUTION 240
 #define LIDAR_SPEED 255
 #define DISTANCE_MAX_THRESHOLD 4000 // in mm
@@ -29,7 +29,7 @@
 #define ROBOT_BACKWARDLEFT 'm'
 #define ROBOT_BACKWARDRIGHT 'n'
 #define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.95 // At 70 straight speed with 0.93 left motor tune down, the robot moves straight. Not effective at 150 straight speed.
-#define MOTOR_TURNING_RATIO 0.7
+#define MOTOR_TURNING_RATIO 0.75
 
 // Global Variables
 char ControlCmd;
