@@ -12,23 +12,23 @@
 #define MOTORB_IN4 36
 
 // Macros
-#define MOTOR_STRAIGHT_SPEED 75
+#define MOTOR_STRAIGHT_SPEED 85
 #define LIDAR_RESOLUTION 240
 #define LIDAR_SPEED 255
 #define DISTANCE_MAX_THRESHOLD 2000          // in mm
 #define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.98 // At 70 straight speed with 0.93 left motor tune down, the robot moves straight. Not effective at 150 straight speed.
-#define MOTOR_TURNING_RATIO 0.6
+#define MOTOR_TURNING_RATIO 0.75
 
 // Library Objects
 RPLidar lidar;
 
 Eloquent::ML::Port::RandomForest clf;
-int lidarDataSelection[80] = {136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149,
-                              150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163,
-                              164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 176, 184, 185,
-                              186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199,
-                              200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213,
-                              214, 215, 216, 217, 218, 219, 220, 221, 222, 223};
+int lidarDataSelection[80] = {10, 14, 30, 32, 34, 35, 36, 38, 60, 62, 64, 66, 68, 69,
+                              70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 116, 120, 122, 128,
+                              134, 144, 146, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158,
+                              159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172,
+                              173, 174, 176, 178, 180, 182, 184, 186, 198, 200, 201, 202, 203, 204,
+                              205, 206, 207, 208, 209, 210, 211, 212, 213, 214};
 float selectedData[80];
 int distanceBuffer[LIDAR_RESOLUTION];
 int controlCmd;
@@ -46,24 +46,22 @@ void setup()
   pinMode(MOTORB_IN3, OUTPUT);
   pinMode(MOTORB_IN4, OUTPUT);
   pinMode(RPLIDAR_MCONTRL, OUTPUT);
-  Serial1.begin(9600);   // Bluetooth Module
   Serial2.begin(115200); // RPLidar
   lidar.begin(Serial2);
-}
-
-void loop()
-{
   if (IS_OK(lidar.waitPoint()))
   {
     // Lidar is working
-    processLidarData();
   }
   else
   {
     // Lidar is not working
     handleLidarFailure();
   }
+}
 
+void loop()
+{
+  processLidarData();
   for (int i = 0; i < 80; i++)
   {
     selectedData[i] = distanceBuffer[lidarDataSelection[i]];
@@ -94,12 +92,13 @@ int angleIndexMap(int angle)
 }
 void processLidarData()
 {
+  lidar.waitPoint();
   distanceValue = (int)lidar.getCurrentPoint().distance;
   angleValue = (int)lidar.getCurrentPoint().angle;
   qualityValue = (int)lidar.getCurrentPoint().quality;
-
-  if (distanceValue < DISTANCE_MAX_THRESHOLD && qualityValue > 0)
+  if (distanceValue <= DISTANCE_MAX_THRESHOLD && qualityValue > 0)
   {
+    // Get the buffer index for the angle value
     int bufferIndex = angleIndexMap(angleValue);
     if (distanceValue == 0)
     {

@@ -13,7 +13,7 @@
 #define SD_CS 53
 
 // Macros
-#define MOTOR_STRAIGHT_SPEED 75
+#define MOTOR_STRAIGHT_SPEED 90
 #define LIDAR_RESOLUTION 240
 #define LIDAR_SPEED 255
 #define DISTANCE_MAX_THRESHOLD 2000 // in mm
@@ -29,12 +29,12 @@
 #define ROBOT_BACKWARDLEFT 'm'
 #define ROBOT_BACKWARDRIGHT 'n'
 #define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.98
-#define MOTOR_TURNING_RATIO 0.6
+#define MOTOR_TURNING_RATIO 0.73
 
 // Global Variables
 char ControlCmd;
 bool dataRecordingFlag = false;
-int distanceBuffer[LIDAR_RESOLUTION];
+volatile int distanceBuffer[LIDAR_RESOLUTION];
 int distanceValue = 0;
 int angleValue = 0;
 int qualityValue = 0;
@@ -73,16 +73,7 @@ void loop()
   if (dataRecordingFlag)
   {
     // Process data from lidar only when data recording is enabled
-    if (IS_OK(lidar.waitPoint()))
-    {
-      // Lidar is working
-      processLidarData();
-    }
-    else
-    {
-      // Lidar is not working
-      handleLidarFailure();
-    }
+    processLidarData();
   }
 
   if (Serial1.available())
@@ -97,7 +88,7 @@ void loop()
 
 ISR(TIMER1_COMPA_vect)
 {
-  // distance buff convertion to string
+  // distance buff conversion to string
   if (dataRecordingFlag)
   {
     String dataString = "";
@@ -120,17 +111,19 @@ ISR(TIMER1_COMPA_vect)
     {
       // Error opening the data file
     }
+    resetDistanceBuffer();
   }
 }
 
 void processLidarData()
 {
+  lidar.waitPoint();
   distanceValue = (int)lidar.getCurrentPoint().distance;
   angleValue = (int)lidar.getCurrentPoint().angle;
   qualityValue = (int)lidar.getCurrentPoint().quality;
-
-  if (distanceValue < DISTANCE_MAX_THRESHOLD && qualityValue > 0)
+  if (distanceValue <= DISTANCE_MAX_THRESHOLD && qualityValue > 0)
   {
+    // Get the buffer index for the angle value
     int bufferIndex = angleIndexMap(angleValue);
     if (distanceValue == 0)
     {
@@ -275,6 +268,18 @@ void moveMotors(char cmd)
     digitalWrite(MOTORB_IN4, LOW);
     analogWrite(ENA, MOTOR_STRAIGHT_SPEED);
     analogWrite(ENB, MOTOR_STRAIGHT_SPEED * LEFT_MOTOR_TUNE_DOWN_PERCENTAGE);
+    break;
+
+  case DATA_RECORDING_ENABLED:
+    if (IS_OK(lidar.waitPoint()))
+    {
+      // Lidar is working
+    }
+    else
+    {
+      // Lidar is not working
+      handleLidarFailure();
+    }
     break;
 
   case DATA_RECORDING_DISABLED:
