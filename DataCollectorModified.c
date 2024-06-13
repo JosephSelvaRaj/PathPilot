@@ -13,10 +13,10 @@
 #define SD_CS 53
 
 // Macros
-#define MOTOR_STRAIGHT_SPEED 105
-#define LIDAR_RESOLUTION 240
+#define MOTOR_STRAIGHT_SPEED 90
+#define LIDAR_RESOLUTION 360
 #define LIDAR_SPEED 255
-#define DISTANCE_MAX_THRESHOLD 4000 // in mm
+#define DISTANCE_MAX_THRESHOLD 2000 // in mm
 #define DATA_RECORDING_ENABLED 'D'
 #define DATA_RECORDING_DISABLED 'd'
 #define ROBOT_FORWARD 'F'
@@ -28,14 +28,13 @@
 #define ROBOT_PIVOTLEFT 'l'
 #define ROBOT_BACKWARDLEFT 'm'
 #define ROBOT_BACKWARDRIGHT 'n'
-#define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.95 // At 70 straight speed with 0.93 left motor tune down, the robot moves straight. Not effective at 150 straight speed.
-#define MOTOR_TURNING_RATIO 0.75
+#define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.98
+#define MOTOR_TURNING_RATIO 0.73
 
 // Global Variables
 char ControlCmd;
-bool storeCtrlCmdFlag = false;
 bool dataRecordingFlag = false;
-int distanceBuffer[LIDAR_RESOLUTION];
+volatile int distanceBuffer[LIDAR_RESOLUTION];
 int distanceValue = 0;
 int angleValue = 0;
 int qualityValue = 0;
@@ -56,6 +55,7 @@ void setup()
   pinMode(RPLIDAR_MCONTRL, OUTPUT);
   Serial1.begin(9600);   // Bluetooth Module
   Serial2.begin(115200); // RPLidar
+
   // SD card initialization
   while (!SD.begin(SD_CS))
   {
@@ -73,33 +73,14 @@ void loop()
   if (dataRecordingFlag)
   {
     // Process data from lidar only when data recording is enabled
-    if (IS_OK(lidar.waitPoint()))
-    {
-      // Lidar is working
-      processLidarData();
-    }
-    else
-    {
-      // Lidar is not working
-      handleLidarFailure();
-    }
+    processLidarData();
   }
 
   if (Serial1.available())
   {
     ControlCmd = Serial1.read();
-    Serial.println("Control Command Received: ");
-    Serial.println(ControlCmd);
 
-    if (ControlCmd == 'R' || ControlCmd == 'L')
-    {
-      storeCtrlCmdFlag = true;
-    }
-    else
-    {
-      storeCtrlCmdFlag = false;
-      dataRecordingFlag = (ControlCmd == DATA_RECORDING_ENABLED) ? true : ((ControlCmd == DATA_RECORDING_DISABLED) ? false : dataRecordingFlag);
-    }
+    dataRecordingFlag = (ControlCmd == DATA_RECORDING_ENABLED) ? true : ((ControlCmd == DATA_RECORDING_DISABLED) ? false : dataRecordingFlag);
   }
 
   moveMotors(ControlCmd);
@@ -107,8 +88,8 @@ void loop()
 
 ISR(TIMER1_COMPA_vect)
 {
-  // distance buff convertion to string
-  if (dataRecordingFlag && storeCtrlCmdFlag)
+  // distance buff conversion to string
+  if (dataRecordingFlag)
   {
     String dataString = "";
     for (int i = 0; i < LIDAR_RESOLUTION; i++)
@@ -129,19 +110,20 @@ ISR(TIMER1_COMPA_vect)
     else
     {
       // Error opening the data file
-      Serial.println("Error opening datalog.txt");
     }
+    resetDistanceBuffer();
   }
 }
 
 void processLidarData()
 {
+  lidar.waitPoint();
   distanceValue = (int)lidar.getCurrentPoint().distance;
   angleValue = (int)lidar.getCurrentPoint().angle;
   qualityValue = (int)lidar.getCurrentPoint().quality;
-
-  if (distanceValue < DISTANCE_MAX_THRESHOLD && qualityValue > 0)
+  if (qualityValue > 0)
   {
+    // Get the buffer index for the angle value
     int bufferIndex = angleIndexMap(angleValue);
     if (distanceValue == 0)
     {
@@ -286,6 +268,18 @@ void moveMotors(char cmd)
     digitalWrite(MOTORB_IN4, LOW);
     analogWrite(ENA, MOTOR_STRAIGHT_SPEED);
     analogWrite(ENB, MOTOR_STRAIGHT_SPEED * LEFT_MOTOR_TUNE_DOWN_PERCENTAGE);
+    break;
+
+  case DATA_RECORDING_ENABLED:
+    if (IS_OK(lidar.waitPoint()))
+    {
+      // Lidar is working
+    }
+    else
+    {
+      // Lidar is not working
+      handleLidarFailure();
+    }
     break;
 
   case DATA_RECORDING_DISABLED:

@@ -15,21 +15,21 @@
 #define MOTOR_STRAIGHT_SPEED 85
 #define LIDAR_RESOLUTION 240
 #define LIDAR_SPEED 255
-#define DISTANCE_MAX_THRESHOLD 2000          // in mm
-#define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.98 // At 70 straight speed with 0.93 left motor tune down, the robot moves straight. Not effective at 150 straight speed.
-#define MOTOR_TURNING_RATIO 0.75
+#define DISTANCE_MAX_THRESHOLD 2000 // in mm
+#define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.98
+#define MOTOR_TURNING_RATIO 0.73
 #define NUM_OF_FEATURES 80
 
 // Library Objects
 RPLidar lidar;
 
 Eloquent::ML::Port::RandomForest clf;
-int lidarDataSelection[NUM_OF_FEATURES] = {10, 14, 30, 32, 34, 35, 36, 38, 60, 62, 64, 66, 68, 69,
-                                           70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 116, 120, 122, 128,
-                                           134, 144, 146, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158,
-                                           159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172,
-                                           173, 174, 176, 178, 180, 182, 184, 186, 198, 200, 201, 202, 203, 204,
-                                           205, 206, 207, 208, 209, 210, 211, 212, 213, 214};
+int lidarDataSelection[NUM_OF_FEATURES] = {68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 135, 136, 137,
+                                           138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151,
+                                           152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165,
+                                           166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179,
+                                           180, 181, 182, 184, 186, 188, 198, 200, 202, 204, 205, 206, 207, 208,
+                                           209, 210, 211, 212, 213, 214, 215, 216, 218, 220};
 float selectedData[NUM_OF_FEATURES];
 int distanceBuffer[LIDAR_RESOLUTION];
 int controlCmd;
