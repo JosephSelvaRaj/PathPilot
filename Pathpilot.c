@@ -12,11 +12,10 @@
 #define MOTORB_IN4 36
 
 // Macros
-#define MOTOR_STRAIGHT_SPEED 85
-#define LIDAR_RESOLUTION 240
+#define MOTOR_STRAIGHT_SPEED 90
+#define LIDAR_RESOLUTION 360
 #define LIDAR_SPEED 255
-#define DISTANCE_MAX_THRESHOLD 2000 // in mm
-#define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.98
+#define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.97
 #define MOTOR_TURNING_RATIO 0.73
 #define NUM_OF_FEATURES 80
 
@@ -24,12 +23,12 @@
 RPLidar lidar;
 
 Eloquent::ML::Port::RandomForest clf;
-int lidarDataSelection[NUM_OF_FEATURES] = {68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 135, 136, 137,
-                                           138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151,
-                                           152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165,
-                                           166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179,
-                                           180, 181, 182, 184, 186, 188, 198, 200, 202, 204, 205, 206, 207, 208,
-                                           209, 210, 211, 212, 213, 214, 215, 216, 218, 220};
+int lidarDataSelection[NUM_OF_FEATURES] = {135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148,
+                                           149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162,
+                                           163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 184, 185, 186,
+                                           187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200,
+                                           201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214,
+                                           215, 216, 217, 218, 219, 220, 221, 222, 223, 224};
 float selectedData[NUM_OF_FEATURES];
 int distanceBuffer[LIDAR_RESOLUTION];
 int controlCmd;
@@ -138,7 +137,7 @@ void processLidarData()
     distanceValue = (int)lidar.getCurrentPoint().distance;
     angleValue = (int)lidar.getCurrentPoint().angle;
     qualityValue = (int)lidar.getCurrentPoint().quality;
-    if (distanceValue <= DISTANCE_MAX_THRESHOLD && qualityValue > 0)
+    if (qualityValue > 0)
     {
         // Get the buffer index for the angle value
         int bufferIndex = angleIndexMap(angleValue);
