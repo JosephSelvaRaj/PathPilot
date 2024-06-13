@@ -15,6 +15,7 @@
 // Macros
 #define MOTOR_STRAIGHT_SPEED 90
 #define LIDAR_RESOLUTION 240
+#define DISTANCE_MAX_THRESHOLD 2000
 #define LIDAR_SPEED 255
 #define DATA_RECORDING_ENABLED 'D'
 #define DATA_RECORDING_DISABLED 'd'
@@ -120,7 +121,7 @@ void processLidarData()
   distanceValue = (int)lidar.getCurrentPoint().distance;
   angleValue = (int)lidar.getCurrentPoint().angle;
   qualityValue = (int)lidar.getCurrentPoint().quality;
-  if (qualityValue > 0)
+  if (distanceValue <= DISTANCE_MAX_THRESHOLD && qualityValue > 0)
   {
     // Get the buffer index for the angle value
     int bufferIndex = angleIndexMap(angleValue);
