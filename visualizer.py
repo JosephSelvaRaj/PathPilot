@@ -4,18 +4,19 @@ import math
 pygame.init()
 
 # Constants
-LIDAR_RESOLUTION = 240
+LIDAR_RESOLUTION = 360
+MAX_DISTANCE = 3000  # You can adjust this based on the maximum distance expected in your data
 SCREEN_SIZE = 800
 CENTER = SCREEN_SIZE // 2
 BACKGROUND_COLOR = (250, 250, 250)
 ROBOT_COLOR = (252, 132, 3)
 HIGHLIGHTED_COLOR = (255, 0, 0)
 DEFAULT_COLOR = (0, 0, 0)
-ROBOT_RADIUS = 30
+ROBOT_RADIUS = 15
 HIGHLIGHTED_RADIUS = 4
 DEFAULT_RADIUS = 3
-DATA_FILE_PATH = 'C:\\Users\\josep\\Documents\\Github Repo\\PathPilot\\PathPilot\\MASTERDATA2MoreThan2000.txt'
-WAIT_TIME = 50  # milliseconds
+DATA_FILE_PATH = 'C:\\Users\\josep\\Documents\\Github Repo\\PathPilot\\PathPilot\\DATA.txt'
+WAIT_TIME = 200  # milliseconds
 
 highlighted_indices = [
     68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 135, 136, 137,
@@ -47,8 +48,8 @@ def main():
     with open(DATA_FILE_PATH, 'r') as file:
         lines = file.readlines()
 
-    max_distance = 4000  # You can adjust this based on the maximum distance expected in your data
-    scaling_factor = SCREEN_SIZE / max_distance  # Adjust the factor to fill the screen
+    
+    scaling_factor = SCREEN_SIZE / MAX_DISTANCE  # Adjust the factor to fill the screen
 
     for line in lines:
         distances = get_data_from_arduino(line)
