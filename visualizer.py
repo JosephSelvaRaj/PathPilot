@@ -16,7 +16,7 @@ ROBOT_RADIUS = 15
 HIGHLIGHTED_RADIUS = 4
 DEFAULT_RADIUS = 3
 DATA_FILE_PATH = 'C:\\Users\\josep\\Documents\\Github Repo\\PathPilot\\PathPilot\\MASTERDATA240CIRCLE.txt'
-WAIT_TIME = 200  # milliseconds
+WAIT_TIME = 50  # milliseconds
 
 highlighted_indices = [
     136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149,
