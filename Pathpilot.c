@@ -35,7 +35,12 @@ Eloquent::ML::Port::RandomForest clf;
 NewPing sonar(TRIG_PIN, ECHO_PIN, ULTRASONIC_MAX_DISTANCE);
 
 // Global Variables
-int lidarDataSelection[NUM_OF_FEATURES];
+int lidarDataSelection[NUM_OF_FEATURES] = {46, 47, 48, 50, 51, 53, 54, 100, 102, 103, 104, 107, 132, 207,
+                                           209, 211, 212, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234,
+                                           235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248,
+                                           249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 301, 302, 303, 306,
+                                           307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320,
+                                           321, 322, 323, 324, 325, 326, 327, 328, 329, 330};
 float selectedData[NUM_OF_FEATURES];
 int distanceBuffer[LIDAR_RESOLUTION];
 int controlCmd = 0;
@@ -159,7 +164,7 @@ void resetdataBuffer()
 
 void setupTimer1(void)
 {
-    // Configure Timer1 for 200ms
+    // Configure Timer1 for 400ms
     cli(); // Disable all interrupts for register configuration
     TCCR1A = 0;
     TCCR1B = 0;

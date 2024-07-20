@@ -1,28 +1,37 @@
 #include <RPLidar.h>
 #include <SPI.h>
+#include <NewPing.h>
 #include "randomForest.h"
 
 // Pinout
 #define ENA 2
 #define ENB 3
 #define RPLIDAR_MCONTRL 4
+#define BUZZER_PIN 7
+#define ECHO_PIN 8
+#define TRIG_PIN 9
 #define MOTORA_IN1 30
 #define MOTORA_IN2 32
 #define MOTORB_IN3 34
 #define MOTORB_IN4 36
 
 // Macros
-#define MOTOR_STRAIGHT_SPEED 90
+#define MOTOR_TURNING_RATIO 0.73
+#define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.97
+#define ULTRASONIC_THRESHOLD 5
+#define NUM_OF_FEATURES 80
+#define MOTOR_STRAIGHT_SPEED 80
+#define OBSTACLE_DETECT_DISTANCE 150
+#define OBSTACLE_DETECT_ANGLE_MIN 165
+#define OBSTACLE_DETECT_ANGLE_MAX 195
+#define ULTRASONIC_MAX_DISTANCE 200
 #define LIDAR_RESOLUTION 360
 #define LIDAR_SPEED 255
-#define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.97
-#define MOTOR_TURNING_RATIO 0.73
-#define NUM_OF_FEATURES 80
 
 // Library Objects
 RPLidar lidar;
-
 Eloquent::ML::Port::RandomForest clf;
+NewPing sonar(TRIG_PIN, ECHO_PIN, ULTRASONIC_MAX_DISTANCE);
 int lidarDataSelection[NUM_OF_FEATURES] = {46, 47, 48, 50, 51, 53, 54, 100, 102, 103, 104, 107, 132, 207,
                                            209, 211, 212, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234,
                                            235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248,
@@ -35,20 +44,26 @@ int controlCmd;
 int distanceValue = 0;
 int angleValue = 0;
 int qualityValue = 0;
+int ultrasonicDistance = 0;
+bool obstacleDetected = false;
 
 void setup()
 {
     // Pin and Serial initialization
+    pinMode(ECHO_PIN, INPUT);
+    pinMode(TRIG_PIN, OUTPUT);
     pinMode(ENA, OUTPUT);
     pinMode(ENB, OUTPUT);
     pinMode(MOTORA_IN1, OUTPUT);
     pinMode(MOTORA_IN2, OUTPUT);
     pinMode(MOTORB_IN3, OUTPUT);
     pinMode(MOTORB_IN4, OUTPUT);
+    pinMode(BUZZER_PIN, OUTPUT);
     pinMode(RPLIDAR_MCONTRL, OUTPUT);
+    Serial.begin(9600);    // Serial Monitor
     Serial2.begin(115200); // RPLidar
     lidar.begin(Serial2);
-    if (IS_OK(lidar.waitPoint()))
+    if (IS_OK(lidar.waitPoint())) //
     {
         // Lidar is working
     }
@@ -57,24 +72,29 @@ void setup()
         // Lidar is not working
         handleLidarFailure();
     }
-    setupTimer1();
+    setupTimer1(); // CHanged to 400ms
 }
 
 void loop()
 {
+    ultrasonicDistance = sonar.ping_cm();
     processLidarData();
 }
 
 ISR(TIMER1_COMPA_vect)
 {
-    for (int i = 0; i < NUM_OF_FEATURES; i++)
+    // Every 400ms
+    if (!obstacleDetected)
     {
-        selectedData[i] = distanceBuffer[lidarDataSelection[i]];
+        for (int i = 0; i < NUM_OF_FEATURES; i++)
+        {
+            selectedData[i] = distanceBuffer[lidarDataSelection[i]];
+        }
+        controlCmd = clf.predict(selectedData);
+        moveMotors(controlCmd);
+        resetdataBuffer();
+        resetDistanceBuffer();
     }
-    controlCmd = clf.predict(selectedData);
-    moveMotors(controlCmd);
-    resetdataBuffer();
-    resetDistanceBuffer();
 }
 
 void resetDistanceBuffer()
@@ -95,13 +115,13 @@ void resetdataBuffer()
 
 void setupTimer1(void)
 {
-    // Configure Timer1 for 200ms
+    // Configure Timer1 for 400ms
     cli(); // Disable all interrupts for register configuration
     TCCR1A = 0;
     TCCR1B = 0;
     TCNT1 = 0;
-    // 200ms (16000000/((3124+1)*1024))
-    OCR1A = 3124;
+    // 2.5 Hz (16000000/((6249+1)*1024))
+    OCR1A = 6249;
     // CTC
     TCCR1B |= (1 << WGM12);
     // Prescaler 1024
@@ -137,16 +157,34 @@ void processLidarData()
     distanceValue = (int)lidar.getCurrentPoint().distance;
     angleValue = (int)lidar.getCurrentPoint().angle;
     qualityValue = (int)lidar.getCurrentPoint().quality;
+
     if (qualityValue > 0)
     {
-        // Get the buffer index for the angle value
         int bufferIndex = angleIndexMap(angleValue);
         if (distanceValue == 0)
         {
-            // If the distance value is 0, use the previous angle value
             distanceValue = distanceBuffer[bufferIndex - 1];
         }
         distanceBuffer[bufferIndex] = distanceValue;
+
+        if ((bufferIndex >= OBSTACLE_DETECT_ANGLE_MIN && bufferIndex <= OBSTACLE_DETECT_ANGLE_MAX && distanceValue <= OBSTACLE_DETECT_DISTANCE) || ultrasonicDistance <= ULTRASONIC_THRESHOLD)
+        {
+            stopMotorsAndBuzz();
+            obstacleDetected = true;
+            Serial.println("UltraSonic Distance: ");
+            Serial.println(ultrasonicDistance);
+            Serial.println("Lidar Distance: ");
+            Serial.println(distanceValue);
+        }
+        else if ((bufferIndex >= OBSTACLE_DETECT_ANGLE_MIN && bufferIndex <= OBSTACLE_DETECT_ANGLE_MAX && distanceValue > OBSTACLE_DETECT_DISTANCE) && ultrasonicDistance > ULTRASONIC_THRESHOLD)
+        {
+            obstacleDetected = false;
+        }
+
+        if (!obstacleDetected)
+        {
+            digitalWrite(BUZZER_PIN, LOW);
+        }
     }
 }
 
@@ -215,4 +253,18 @@ void moveMotors(int cmd)
         analogWrite(ENB, 0);
         break;
     }
+}
+
+void stopMotorsAndBuzz()
+{
+    // Stop the motors
+    digitalWrite(MOTORA_IN1, LOW);
+    digitalWrite(MOTORA_IN2, LOW);
+    digitalWrite(MOTORB_IN3, LOW);
+    digitalWrite(MOTORB_IN4, LOW);
+    analogWrite(ENA, 0);
+    analogWrite(ENB, 0);
+
+    // Activate the buzzer
+    digitalWrite(BUZZER_PIN, HIGH);
 }
