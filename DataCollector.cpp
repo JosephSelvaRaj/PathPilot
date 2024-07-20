@@ -125,7 +125,7 @@ void processLidarData()
   {
     // Get the buffer index for the angle value
     int bufferIndex = angleIndexMap(angleValue);
-    if (distanceValue == 0)
+    if (distanceValue <= 128)
     {
       // If the distance value is 0, use the previous angle value
       distanceValue = distanceBuffer[bufferIndex - 1];
@@ -300,13 +300,13 @@ void moveMotors(char cmd)
 
 void setupTimer1(void)
 {
-  // Configure Timer1 for 200ms
+  // Configure Timer1 for 400ms
   cli(); // Disable all interrupts for register configuration
   TCCR1A = 0;
   TCCR1B = 0;
   TCNT1 = 0;
-  // 200ms (16000000/((3124+1)*1024))
-  OCR1A = 3124;
+  // 2.5 Hz (16000000/((6249+1)*1024))
+  OCR1A = 6249;
   // CTC
   TCCR1B |= (1 << WGM12);
   // Prescaler 1024
