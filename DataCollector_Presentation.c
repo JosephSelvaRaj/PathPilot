@@ -299,17 +299,17 @@ void moveMotors(char cmd)
 
 void setupTimer1(void)
 {
-  // Configure Timer1 for 400ms
+  // Configure Timer1 for 180ms
   cli(); // Disable all interrupts for register configuration
   TCCR1A = 0;
   TCCR1B = 0;
   TCNT1 = 0;
-  // 2.5 Hz (16000000/((6249+1)*1024))
-  OCR1A = 6249;
+  // 5.5 Hz (16000000/((45453+1)*64))
+  OCR1A = 45453;
   // CTC
   TCCR1B |= (1 << WGM12);
-  // Prescaler 1024
-  TCCR1B |= (1 << CS12) | (1 << CS10);
+  // Prescaler 64
+  TCCR1B |= (1 << CS11) | (1 << CS10);
   // Output Compare Match A Interrupt Enable
   TIMSK1 |= (1 << OCIE1A);
   sei(); // Enable global interrupts

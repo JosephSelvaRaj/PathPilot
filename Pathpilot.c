@@ -1,7 +1,7 @@
 #include <RPLidar.h>
 #include <SPI.h>
 #include <NewPing.h>
-#include "randomForest.h"
+#include "XGBoost.h"
 
 // Pinout
 #define ENA 2
@@ -16,11 +16,11 @@
 #define MOTORB_IN4 36
 
 // Macros
-#define MOTOR_TURNING_RATIO 0.73
+#define MOTOR_STRAIGHT_SPEED 120
+#define MOTOR_TURNING_RATIO 0.68
 #define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.97
 #define ULTRASONIC_THRESHOLD 5
-#define NUM_OF_FEATURES 80
-#define MOTOR_STRAIGHT_SPEED 80
+#define NUM_OF_FEATURES 120
 #define OBSTACLE_DETECT_DISTANCE 150
 #define OBSTACLE_DETECT_ANGLE_MIN 165
 #define OBSTACLE_DETECT_ANGLE_MAX 195
@@ -31,16 +31,11 @@
 
 // Library Objects
 RPLidar lidar;
-Eloquent::ML::Port::RandomForest clf;
+Eloquent::ML::Port::XGBClassifier clf;
 NewPing sonar(TRIG_PIN, ECHO_PIN, ULTRASONIC_MAX_DISTANCE);
 
 // Global Variables
-int lidarDataSelection[NUM_OF_FEATURES] = {46, 47, 48, 50, 51, 53, 54, 100, 102, 103, 104, 107, 132, 207,
-                                           209, 211, 212, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234,
-                                           235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248,
-                                           249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 301, 302, 303, 306,
-                                           307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320,
-                                           321, 322, 323, 324, 325, 326, 327, 328, 329, 330};
+int lidarDataSelection[NUM_OF_FEATURES] = {32, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 89, 127, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 194, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 220, 222};
 float selectedData[NUM_OF_FEATURES];
 int distanceBuffer[LIDAR_RESOLUTION];
 int controlCmd = 0;
@@ -81,7 +76,7 @@ void setup()
 
 void loop()
 {
-    if (ultraSonicPing) // 0.4s
+    if (ultraSonicPing)
     {
         ultrasonicDistance = sonar.ping_cm();
         if (ultrasonicDistance == 0)
@@ -90,6 +85,7 @@ void loop()
         }
         ultraSonicPing = false;
     }
+
     processLidarData();
 }
 
@@ -117,10 +113,10 @@ void processLidarData()
     angleValue = (int)lidar.getCurrentPoint().angle;
     qualityValue = (int)lidar.getCurrentPoint().quality;
 
-    if (distanceValue <= DISTANCE_MAX_THRESHOLD && qualityValue > 0)
+    if (distanceValue < DISTANCE_MAX_THRESHOLD && qualityValue > 0)
     {
         int bufferIndex = angleIndexMap(angleValue);
-        if (distanceValue <= 128)
+        if (distanceValue <= 0)
         {
             distanceValue = distanceBuffer[bufferIndex - 1];
         }
@@ -164,20 +160,20 @@ void resetdataBuffer()
 
 void setupTimer1(void)
 {
-    // Configure Timer1 for 400ms
-    cli(); // Disable all interrupts for register configuration
-    TCCR1A = 0;
-    TCCR1B = 0;
-    TCNT1 = 0;
-    // 2.5 Hz (16000000/((6249+1)*1024))
-    OCR1A = 6249;
-    // CTC
-    TCCR1B |= (1 << WGM12);
-    // Prescaler 1024
-    TCCR1B |= (1 << CS12) | (1 << CS10);
-    // Output Compare Match A Interrupt Enable
-    TIMSK1 |= (1 << OCIE1A);
-    sei(); // Enable global interrupts
+  // Configure Timer1 for 180ms
+  cli(); // Disable all interrupts for register configuration
+  TCCR1A = 0;
+  TCCR1B = 0;
+  TCNT1 = 0;
+  // 5.5 Hz (16000000/((45453+1)*64))
+  OCR1A = 45453;
+  // CTC
+  TCCR1B |= (1 << WGM12);
+  // Prescaler 64
+  TCCR1B |= (1 << CS11) | (1 << CS10);
+  // Output Compare Match A Interrupt Enable
+  TIMSK1 |= (1 << OCIE1A);
+  sei(); // Enable global interrupts
 }
 
 int angleIndexMap(int angle)

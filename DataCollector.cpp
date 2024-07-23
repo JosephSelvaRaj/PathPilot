@@ -13,7 +13,7 @@
 #define SD_CS 53
 
 // Macros
-#define MOTOR_STRAIGHT_SPEED 90
+#define MOTOR_STRAIGHT_SPEED 78
 #define LIDAR_RESOLUTION 240
 #define DISTANCE_MAX_THRESHOLD 2000
 #define LIDAR_SPEED 255
@@ -28,7 +28,7 @@
 #define ROBOT_PIVOTLEFT 'l'
 #define ROBOT_BACKWARDLEFT 'm'
 #define ROBOT_BACKWARDRIGHT 'n'
-#define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.97
+#define LEFT_MOTOR_TUNE_DOWN_PERCENTAGE 0.96
 #define MOTOR_TURNING_RATIO 0.73
 
 // Global Variables
@@ -121,11 +121,11 @@ void processLidarData()
   distanceValue = (int)lidar.getCurrentPoint().distance;
   angleValue = (int)lidar.getCurrentPoint().angle;
   qualityValue = (int)lidar.getCurrentPoint().quality;
-  if (distanceValue <= DISTANCE_MAX_THRESHOLD && qualityValue > 0)
+  if (distanceValue < DISTANCE_MAX_THRESHOLD && qualityValue > 0)
   {
     // Get the buffer index for the angle value
     int bufferIndex = angleIndexMap(angleValue);
-    if (distanceValue <= 128)
+    if (distanceValue == 0)
     {
       // If the distance value is 0, use the previous angle value
       distanceValue = distanceBuffer[bufferIndex - 1];
@@ -300,13 +300,13 @@ void moveMotors(char cmd)
 
 void setupTimer1(void)
 {
-  // Configure Timer1 for 400ms
+  // Configure Timer1 for 200ms
   cli(); // Disable all interrupts for register configuration
   TCCR1A = 0;
   TCCR1B = 0;
   TCNT1 = 0;
-  // 2.5 Hz (16000000/((6249+1)*1024))
-  OCR1A = 6249;
+  // 5 Hz (16000000/((3124+1)*1024))
+  OCR1A = 3124;
   // CTC
   TCCR1B |= (1 << WGM12);
   // Prescaler 1024
