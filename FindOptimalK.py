@@ -8,7 +8,7 @@ import xgboost as xgb
 from sklearn.metrics import accuracy_score, classification_report
 
 # Load and preprocess the data
-data = pd.read_csv('C:\\Users\\josep\\Documents\\Github Repo\\PathPilot\\PathPilot\\MASTERDATA240CIRCLE.TXT', header=None)
+data = pd.read_csv('C:\\Users\\josep\\Documents\\Github Repo\\PathPilot\\PathPilot\\DATA_RL_MASTERDATACIRCLE.TXT', header=None)
 data.rename(columns={data.columns[-1]: 'Label'}, inplace=True)
 data = data[data['Label'].isin(['F', 'L', 'R'])]
 data.reset_index(drop=True, inplace=True)
@@ -52,7 +52,7 @@ def find_optimal_k(X_train, y_train, X_test, y_test, max_k, step=10):
     plt.plot(k_values, accuracies, marker='o', linestyle='-')
     plt.xlabel('k Value')
     plt.ylabel('Accuracy (%)')
-    plt.title('Accuracy vs. k Value')
+    plt.title('Accuracy vs. k Values (XGBoost)')
     plt.grid(True)
     
     # Highlight the optimal k value
